@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlExpressions", "SqlExpressions\SqlExpressions.csproj", "{7D719765-EAAA-4BCD-B373-D5F1D7AD7317}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlExpressions.Tests", "SqlExpressions.Tests\SqlExpressions.Tests.csproj", "{93714887-2996-4579-8CF5-C68566932487}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7D719765-EAAA-4BCD-B373-D5F1D7AD7317}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D719765-EAAA-4BCD-B373-D5F1D7AD7317}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D719765-EAAA-4BCD-B373-D5F1D7AD7317}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D719765-EAAA-4BCD-B373-D5F1D7AD7317}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93714887-2996-4579-8CF5-C68566932487}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93714887-2996-4579-8CF5-C68566932487}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93714887-2996-4579-8CF5-C68566932487}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93714887-2996-4579-8CF5-C68566932487}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
