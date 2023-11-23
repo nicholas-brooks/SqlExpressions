@@ -7,7 +7,7 @@ public static class ExpressionExtensions
 {
     public static string Compile(this Expression expression, Func<string, string> propertyMapper)
     {
-        var compiler = new WhereExpressionCompiler();
+        var compiler = new StringCompiler();
         return compiler.Compile(expression, propertyMapper);
     }
 }

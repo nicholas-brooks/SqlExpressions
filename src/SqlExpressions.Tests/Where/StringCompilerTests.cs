@@ -13,11 +13,11 @@ namespace SqlExpressions.Tests.Where
         public string Status { get; set; } = string.Empty;
     }
 
-    public class SqlCompilingTests
+    public class StringCompilerTests
     {
         private readonly ITestOutputHelper output;
 
-        public SqlCompilingTests(ITestOutputHelper output)
+        public StringCompilerTests(ITestOutputHelper output)
         {
             this.output = output;
         }
