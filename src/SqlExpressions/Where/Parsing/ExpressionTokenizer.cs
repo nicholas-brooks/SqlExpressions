@@ -5,9 +5,9 @@ namespace SqlExpressions.Where.Parsing;
 
 class ExpressionTokenizer : Tokenizer<ExpressionToken>
 {
-    readonly ExpressionToken[] _singleCharOps = new ExpressionToken[128];
+    readonly ExpressionToken[] singleCharOps = new ExpressionToken[128];
 
-    readonly ExpressionKeyword[] _keywords =
+    readonly ExpressionKeyword[] keywords =
     {
         new("and", ExpressionToken.And),
         new("is", ExpressionToken.Is),
@@ -23,14 +23,14 @@ class ExpressionTokenizer : Tokenizer<ExpressionToken>
 
     public ExpressionTokenizer()
     {
-        _singleCharOps['<'] = ExpressionToken.LessThan;
-        _singleCharOps['>'] = ExpressionToken.GreaterThan;
-        _singleCharOps['='] = ExpressionToken.Equal;
-        _singleCharOps[','] = ExpressionToken.Comma;
-        _singleCharOps['('] = ExpressionToken.LParen;
-        _singleCharOps[')'] = ExpressionToken.RParen;
-        _singleCharOps['['] = ExpressionToken.LBracket;
-        _singleCharOps[']'] = ExpressionToken.RBracket;
+        singleCharOps['<'] = ExpressionToken.LessThan;
+        singleCharOps['>'] = ExpressionToken.GreaterThan;
+        singleCharOps['='] = ExpressionToken.Equal;
+        singleCharOps[','] = ExpressionToken.Comma;
+        singleCharOps['('] = ExpressionToken.LParen;
+        singleCharOps[')'] = ExpressionToken.RParen;
+        singleCharOps['['] = ExpressionToken.LBracket;
+        singleCharOps[']'] = ExpressionToken.RBracket;
     }
 
     protected override IEnumerable<Result<ExpressionToken>> Tokenize(TextSpan stringSpan)
@@ -100,9 +100,9 @@ class ExpressionTokenizer : Tokenizer<ExpressionToken>
                     yield return Result.Value(compoundOp.Value, compoundOp.Location, compoundOp.Remainder);
                     next = compoundOp.Remainder.ConsumeChar();
                 }
-                else if (next.Value < _singleCharOps.Length && _singleCharOps[next.Value] != ExpressionToken.None)
+                else if (next.Value < singleCharOps.Length && singleCharOps[next.Value] != ExpressionToken.None)
                 {
-                    yield return Result.Value(_singleCharOps[next.Value], next.Location, next.Remainder);
+                    yield return Result.Value(singleCharOps[next.Value], next.Location, next.Remainder);
                     next = next.Remainder.ConsumeChar();
                 }
                 else
@@ -120,12 +120,12 @@ class ExpressionTokenizer : Tokenizer<ExpressionToken>
     {
         return !next.HasValue ||
                char.IsWhiteSpace(next.Value) ||
-               next.Value < _singleCharOps.Length && _singleCharOps[next.Value] != ExpressionToken.None;
+               next.Value < singleCharOps.Length && singleCharOps[next.Value] != ExpressionToken.None;
     }
 
     bool TryGetKeyword(TextSpan span, out ExpressionToken keyword)
     {
-        foreach (var kw in _keywords)
+        foreach (var kw in keywords)
         {
             if (span.EqualsValueIgnoreCase(kw.Text))
             {

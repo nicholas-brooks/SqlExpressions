@@ -23,7 +23,7 @@ public static class OrderByTokenParser
             Token.EqualTo(OrderByToken.Ascending).Value(OrderByType.Ascending)
                 .Or(Token.EqualTo(OrderByToken.Descending).Value(OrderByType.Descending))
                 .Select(op => (Expression)new ClauseExpression(op, modifier))
-                .OptionalOrDefault((Expression)new ClauseExpression(OrderByType.Ascending, modifier)));
+                .OptionalOrDefault(new ClauseExpression(OrderByType.Ascending, modifier)));
 
 
     private static readonly TokenListParser<OrderByToken, OrderByClause> Expr =

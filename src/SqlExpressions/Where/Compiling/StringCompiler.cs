@@ -12,9 +12,9 @@ public sealed class StringCompiler
     }
         
 
-    public string Compile(Expression expression, Func<string, string> propertyMapper)
+    public string Compile(Expression expression, Func<string, string>? propertyMapper)
     {
-        this.propertyMapper = propertyMapper;
+        this.propertyMapper = propertyMapper ?? this.propertyMapper;
         return Compile(expression);
     }
 

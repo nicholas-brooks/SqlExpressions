@@ -5,7 +5,7 @@ namespace SqlExpressions.OrderBy.Parsing;
 
 public class OrderByTokenizer : Tokenizer<OrderByToken>
 {
-    readonly OrderByKeyword[] _keywords =
+    readonly OrderByKeyword[] keywords =
     {
         new("asc", OrderByToken.Ascending),
         new("desc", OrderByToken.Descending)
@@ -56,7 +56,7 @@ public class OrderByTokenizer : Tokenizer<OrderByToken>
     
     bool TryGetKeyword(TextSpan span, out OrderByToken keyword)
     {
-        foreach (var kw in _keywords)
+        foreach (var kw in keywords)
         {
             if (span.EqualsValueIgnoreCase(kw.Text))
             {
