@@ -2,11 +2,7 @@
 
 namespace SqlExpressions.Where.Compiling;
 
-/// <summary>
-/// Compiles the Expressions AST into a Sql where expression that Dommel will use.
-/// e.g. 'OrderNo = '342312' and OrderDate > '2022-01-01' -> "SOOrders"."OrderNo" = '342312' and "SOOrders"."OrderDate" > '2022-01-01'
-/// </summary>
-internal class StringCompiler
+public sealed class StringCompiler
 {
     private Func<string, string> propertyMapper;
 
