@@ -39,9 +39,9 @@ public sealed class LinqExpressionCompiler
         switch (call.OperatorType)
         {
             case OperatorType.And:
-                return Linq.Expression.And(Compile(call.Operands[0]), Compile(call.Operands[1]));
+                return Linq.Expression.AndAlso(Compile(call.Operands[0]), Compile(call.Operands[1]));
             case OperatorType.Or:
-                return Linq.Expression.Or(Compile(call.Operands[0]), Compile(call.Operands[1]));
+                return Linq.Expression.OrElse(Compile(call.Operands[0]), Compile(call.Operands[1]));
             case OperatorType.Equal:
             case OperatorType.NotEqual:
             case OperatorType.GreaterThan:
