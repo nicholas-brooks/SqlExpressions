@@ -151,6 +151,13 @@ public class LinqExpressionCompilerTests
     {
         TestCaseFilterExpression(expression, isValid, expected);
     }
+
+    [Theory]
+    [InlineData("One = 1 and (Three = 'one' or Three like 'three%')", 1)]
+    public void CompileCompoundExpression(string expression, int expected)
+    {
+        TestCaseFilterExpression(expression, true, expected);
+    }
     
     private void TestCaseFilterExpression(string expression, bool isValid, int expected)
     {
