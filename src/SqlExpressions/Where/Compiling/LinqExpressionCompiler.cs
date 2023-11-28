@@ -4,7 +4,7 @@ using Linq = System.Linq.Expressions;
 
 namespace SqlExpressions.Where.Compiling;
 
-public class LinqExpressionCompiler
+public sealed class LinqExpressionCompiler
 {
     private Type type = null!;
     private PropertyInfo[] properties = null!;
@@ -38,6 +38,10 @@ public class LinqExpressionCompiler
     {
         switch (call.OperatorType)
         {
+            case OperatorType.And:
+                return Linq.Expression.And(Compile(call.Operands[0]), Compile(call.Operands[1]));
+            case OperatorType.Or:
+                return Linq.Expression.Or(Compile(call.Operands[0]), Compile(call.Operands[1]));
             case OperatorType.Equal:
             case OperatorType.NotEqual:
             case OperatorType.GreaterThan:
@@ -53,20 +57,53 @@ public class LinqExpressionCompiler
                 return CompileLikeExpression(call.Operands[0], call.Operands[1]);
             case OperatorType.NotLike:
                 return CompileNotLikeExpression(call.Operands[0], call.Operands[1]);
+            case OperatorType.In:
+                return CompileInExpression(call.Operands[0], call.Operands[1]);
+            case OperatorType.NotIn:
+                return CompileNotInExpression(call.Operands[0], call.Operands[1]);
             default:
                 throw new ArgumentException($"Unhandled Call Operator {call.OperatorType}");
         }
-
-        return call.OperatorType switch
-        {
-            // OperatorType.And => CompileAndExpression(call.Operands),
-            // OperatorType.Or => CompileOrExpression(call.Operands),
-            // OperatorType.In => CompileInExpression(call.Operands[0], call.Operands[1]),
-            // OperatorType.NotIn => CompileNotInExpression(call.Operands[0], call.Operands[1]),
-            _ => throw new ArgumentException($"Unhandled Call Operator {call.OperatorType}")
-        };
     }
-    
+
+    private static readonly MethodInfo ContainsMethodForIn =
+        typeof(Enumerable)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .First(m => string.Equals("Contains", m.Name) && m.GetParameters().Length == 2);
+
+    private Linq.Expression CompileInExpression(Expression left, Expression right)
+    {
+        if (left is PropertyExpression propertyExpression && right is InArrayExpression arrayExpression)
+        {
+            var property = GetProperty(propertyExpression.PropertyName);
+
+            var values = arrayExpression.Elements.Select(exp =>
+            {
+                if (exp is ConstantExpression {Value: ConstantValue constantValue})
+                {
+                    return Linq.Expression.Constant(PropertyConstantValueToValue(property, constantValue),
+                        property.PropertyType);
+                }
+
+                throw new ArgumentException(
+                    $"Unable to convert {exp} to {property.PropertyType.Name} for {property.Name}");
+            }).ToArray();
+
+            return Linq.Expression.Call(
+                ContainsMethodForIn.MakeGenericMethod(property.PropertyType),
+                Linq.Expression.NewArrayInit(property.PropertyType, values),
+                CompilePropertyExpression(propertyExpression, property));
+        }
+
+        throw new ArgumentException(
+            $"Unable to compile In Expression.  Expected left to be PropertyExpression and right to be InArrayExpression but was {left.GetType().Name} and {right.GetType().Name}");
+    }
+
+    private Linq.Expression CompileNotInExpression(Expression left, Expression right)
+    {
+        return Linq.Expression.Not(CompileInExpression(left, right));
+    }
+
     private static readonly MethodInfo ContainsMethod = typeof(string).GetMethod("Contains", new[] {typeof(string)})!;
 
     private static readonly MethodInfo StartsWithMethod =
@@ -85,20 +122,17 @@ public class LinqExpressionCompiler
                     $"Unable to compile Like Expression. PropertyExpression must be a string type but was {prop.PropertyType.Name}");
             }
 
-            if (constantExpression.Value is ConstantValue constantValue &&
-                constantValue.ValueType == ConstantValueType.String)
+            if (constantExpression.Value is ConstantValue {ValueType: ConstantValueType.String} constantValue)
             {
-                var value = constantValue.Value.ToString();
+                var value = constantValue.Value.ToString() ?? "";
 
-                if (value == "")
+                switch (value)
                 {
-                    return Linq.Expression.Equal(CompilePropertyExpression(propertyExpression, prop),
-                        Linq.Expression.Constant(""));
-                }
-
-                if (value == "%")
-                {
-                    return Linq.Expression.Constant(true); // it is going to match everything.
+                    case "":
+                        return Linq.Expression.Equal(CompilePropertyExpression(propertyExpression, prop),
+                            Linq.Expression.Constant(""));
+                    case "%":
+                        return Linq.Expression.Constant(true); // it is going to match everything.
                 }
 
                 var start = value.StartsWith('%');
@@ -206,84 +240,92 @@ public class LinqExpressionCompiler
     {
         var property = GetProperty(left.PropertyName);
 
-        if (right.Value is ConstantNullValue)
+        return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
+            CompileConstantExpression(property, right));
+    }
+
+    private Linq.Expression CompileConstantExpression(PropertyInfo property, ConstantExpression expression)
+    {
+        if (expression.Value is ConstantNullValue)
         {
-            return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                Linq.Expression.Constant(null, property.GetType()));
+            return Linq.Expression.Constant(null, property.GetType());
         }
 
-        if (right.Value is not ConstantValue constValue)
+        if (expression.Value is not ConstantValue constValue)
         {
             throw new ArgumentException("Unexpected type for right Operand.  Expected ConstantValue");
         }
 
-        switch (constValue.ValueType)
+        return Linq.Expression.Constant(PropertyConstantValueToValue(property, constValue), property.PropertyType);
+    }
+
+    private static object PropertyConstantValueToValue(PropertyInfo property, ConstantValue value)
+    {
+        var propertyType = property.PropertyType;
+
+        if (propertyType == typeof(bool) || propertyType == typeof(bool?))
         {
-            case ConstantValueType.Boolean:
-                if (property.PropertyType == typeof(bool) || property.PropertyType == typeof(bool?))
-                {
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(constValue.Value, property.PropertyType));
-                }
-
-                throw new ArgumentException($"Unable to convert {constValue.Value} to a boolean");
-            case ConstantValueType.Number:
-                if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
-                {
-                    var val = Convert.ToInt32(constValue.Value);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                if (property.PropertyType == typeof(decimal) || property.PropertyType == typeof(int?))
-                {
-                    var val = Convert.ToDecimal(constValue.Value);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                if (property.PropertyType == typeof(double))
-                {
-                    var val = Convert.ToDouble(constValue.Value);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                throw new ArgumentException($"Unable to convert {constValue.Value} to either int, decimal or double");
-            case ConstantValueType.String:
-                if (property.PropertyType == typeof(DateOnly) || property.PropertyType == typeof(DateOnly?))
-                {
-                    var val = DateOnly.Parse(constValue.Value.ToString()!);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                if (property.PropertyType == typeof(DateTime) || property.PropertyType == typeof(DateTime?))
-                {
-                    var val = DateTime.Parse(constValue.Value.ToString()!);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                if (property.PropertyType == typeof(TimeOnly) || property.PropertyType == typeof(TimeOnly?))
-                {
-                    var val = TimeOnly.Parse(constValue.Value.ToString()!);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                if (property.PropertyType.IsEnum)
-                {
-                    var val = Enum.Parse(property.PropertyType, constValue.Value.ToString()!, true);
-                    return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                        Linq.Expression.Constant(val, property.PropertyType));
-                }
-
-                return GenerateBinaryLinqExpression(operatorType, CompilePropertyExpression(left, property),
-                    Linq.Expression.Constant(constValue.Value.ToString()));
-            default:
-                throw new ArgumentException($"Unhandled ConstantValueType of {constValue.ValueType}");
+            if (value.ValueType == ConstantValueType.Boolean)
+                return value.Value;
+            return Convert.ToBoolean(value.Value);
         }
+
+        if (propertyType == typeof(int) || propertyType == typeof(int?))
+        {
+            return Convert.ToInt32(value.Value);
+        }
+
+        if (propertyType == typeof(decimal) || propertyType == typeof(int?))
+        {
+            return Convert.ToDecimal(value.Value);
+        }
+
+        if (propertyType == typeof(long) || propertyType == typeof(long?))
+        {
+            return Convert.ToInt64(value.Value);
+        }
+
+        if (propertyType == typeof(double))
+        {
+            return Convert.ToDouble(value.Value);
+        }
+
+        if (propertyType == typeof(string))
+        {
+            return value.Value.ToString()!;
+        }
+
+        if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
+        {
+            return DateTime.Parse(value.Value.ToString()!);
+        }
+
+        if (propertyType == typeof(DateTimeOffset) || propertyType == typeof(DateTimeOffset?))
+        {
+            return DateTimeOffset.Parse(value.Value.ToString()!);
+        }
+
+        if (propertyType == typeof(DateOnly) || propertyType == typeof(DateOnly?))
+        {
+            return DateOnly.Parse(value.Value.ToString()!);
+        }
+
+        if (propertyType == typeof(TimeOnly) || propertyType == typeof(TimeOnly?))
+        {
+            return TimeOnly.Parse(value.Value.ToString()!);
+        }
+
+        if (propertyType == typeof(Guid))
+        {
+            return Guid.Parse(value.Value.ToString()!);
+        }
+
+        if (propertyType.IsEnum)
+        {
+            return Enum.Parse(propertyType, value.Value.ToString()!, true);
+        }
+
+        throw new ArgumentException($"Unable to convert {value.Value} to type {propertyType.Name} for {property.Name}");
     }
 
     private static Linq.Expression GenerateBinaryLinqExpression(OperatorType operatorType, Linq.Expression left,
