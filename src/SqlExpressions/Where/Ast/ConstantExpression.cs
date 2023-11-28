@@ -7,9 +7,7 @@ public enum ConstantValueType
     Boolean
 }
 
-public abstract record ConstantAbstractValue
-{
-}
+public abstract record ConstantAbstractValue;
 
 public record ConstantValue(ConstantValueType ValueType, object Value) : ConstantAbstractValue;
 
@@ -28,6 +26,6 @@ public class ConstantExpression : Expression
 
     public override string ToString()
     {
-        return Value.ToString();
+        return Value.ToString() ?? string.Empty;
     }
 }

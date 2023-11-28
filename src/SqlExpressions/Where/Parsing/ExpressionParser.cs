@@ -3,9 +3,9 @@ using SqlExpressions.Where.Ast;
 
 namespace SqlExpressions.Where.Parsing;
 
-class ExpressionParser
+sealed class ExpressionParser
 {
-    readonly ExpressionTokenizer _tokenizer = new();
+    readonly ExpressionTokenizer tokenizer = new();
 
     public Expression Parse(string expression)
     {
@@ -23,7 +23,7 @@ class ExpressionParser
             throw new ArgumentNullException(nameof(filterExpression));
         }
 
-        var tokenList = _tokenizer.TryTokenize(filterExpression);
+        var tokenList = tokenizer.TryTokenize(filterExpression);
         if (!tokenList.HasValue)
         {
             error = tokenList.ToString();

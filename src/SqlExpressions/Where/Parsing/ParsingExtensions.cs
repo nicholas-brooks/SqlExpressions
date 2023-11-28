@@ -3,7 +3,7 @@ using Superpower.Model;
 
 namespace SqlExpressions.Where.Parsing;
 
-static class ParsingExtensions
+internal static class ParsingExtensions
 {
     public static TokenListParser<TTokenKind, TResult> SelectCatch<TTokenKind, TArg, TResult>(this TokenListParser<TTokenKind, TArg> parser, Func<TArg, TResult> trySelector, string errorMessage)
     {

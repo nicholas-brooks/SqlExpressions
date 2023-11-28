@@ -1,4 +1,4 @@
-﻿namespace SqlExpressions.Where;
+﻿namespace SqlExpressions.Where.Ast;
 
 /// <summary>
 /// Helper methods to assist with construction of well-formed expressions.

@@ -133,12 +133,12 @@ static class ExpressionTokenParsers
 
     private static readonly TokenListParser<ExpressionToken, Expression> Expr = Connectives;
 
-    static Expression MakeBinary(OperatorType operatorType, Expression leftOperand, Expression rightOperand)
+    private static Expression MakeBinary(OperatorType operatorType, Expression leftOperand, Expression rightOperand)
     {
         return new CallExpression(operatorType, leftOperand, rightOperand);
     }
 
-    static Expression MakeUnary(OperatorType operatorType, Expression operand)
+    private static Expression MakeUnary(OperatorType operatorType, Expression operand)
     {
         return new CallExpression(operatorType, operand);
     }

@@ -5,7 +5,7 @@ namespace SqlExpressions.OrderBy.Parsing;
 
 class OrderByParser
 {
-    readonly OrderByTokenizer _tokenizer = new();
+    readonly OrderByTokenizer tokenizer = new();
 
     public Expression Parse(string expression)
     {
@@ -23,7 +23,7 @@ class OrderByParser
             throw new ArgumentNullException(nameof(filterExpression));
         }
 
-        var tokenList = _tokenizer.TryTokenize(filterExpression);
+        var tokenList = tokenizer.TryTokenize(filterExpression);
         if (!tokenList.HasValue)
         {
             error = tokenList.ToString();
