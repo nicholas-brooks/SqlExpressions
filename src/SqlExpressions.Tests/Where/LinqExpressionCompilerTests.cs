@@ -1,3 +1,4 @@
+using SqlExpressions.Where;
 using SqlExpressions.Where.Compiling;
 using Xunit;
 using Xunit.Abstractions;
@@ -161,16 +162,15 @@ public class LinqExpressionCompilerTests
     
     private void TestCaseFilterExpression(string expression, bool isValid, int expected)
     {
-        var compiler = new LinqExpressionCompiler();
         var intermediateExpression = expression.ParseWhere();
 
         if (!isValid)
         {
-            Assert.Throws<ArgumentException>(() => compiler.Compile<TestClass>(intermediateExpression));
+            Assert.Throws<ArgumentException>(() => intermediateExpression.CompileToLinq<TestClass>());
             return;
         }
 
-        var linqExpression = compiler.Compile<TestClass>(intermediateExpression);
+        var linqExpression = intermediateExpression.CompileToLinq<TestClass>();
 
         output.WriteLine(linqExpression.ToString());
 

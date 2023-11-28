@@ -54,7 +54,7 @@ namespace SqlExpressions.Tests.Where
         {
             var expression = test.ParseWhere();
             output.WriteLine(expression.ToString());
-            var where = expression.Compile(PropertyMapper);
+            var where = expression.CompileToString(PropertyMapper);
             Assert.Equal(expected, @where);
         }
         
