@@ -77,6 +77,11 @@ public sealed class LinqExpressionCompiler
         {
             var property = GetProperty(propertyExpression.PropertyName);
 
+            if (arrayExpression.Elements.Length == 0)
+            {
+                return Linq.Expression.Constant(false);
+            }
+
             var values = arrayExpression.Elements.Select(exp =>
             {
                 if (exp is ConstantExpression {Value: ConstantValue constantValue})
