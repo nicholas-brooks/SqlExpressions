@@ -66,11 +66,6 @@ public sealed class LinqExpressionCompiler
         }
     }
 
-    private static readonly MethodInfo ContainsMethodForIn =
-        typeof(Enumerable)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .First(m => string.Equals("Contains", m.Name) && m.GetParameters().Length == 2);
-
     private Linq.Expression CompileInExpression(Expression left, Expression right)
     {
         if (left is PropertyExpression propertyExpression && right is InArrayExpression arrayExpression)
@@ -94,10 +89,19 @@ public sealed class LinqExpressionCompiler
                     $"Unable to convert {exp} to {property.PropertyType.Name} for {property.Name}");
             }).ToArray();
 
-            return Linq.Expression.Call(
-                ContainsMethodForIn.MakeGenericMethod(property.PropertyType),
-                Linq.Expression.NewArrayInit(property.PropertyType, values),
-                CompilePropertyExpression(propertyExpression, property));
+
+            var expression = GenerateBinaryLinqExpression(OperatorType.Equal,
+                CompilePropertyExpression(propertyExpression, property),
+                values[0]);
+
+            for (var i = 1; i < values.Length; i++)
+            {
+                expression = Linq.Expression.OrElse(expression, GenerateBinaryLinqExpression(OperatorType.Equal,
+                    CompilePropertyExpression(propertyExpression, property),
+                    values[i]));
+            }
+
+            return expression;
         }
 
         throw new ArgumentException(
@@ -109,12 +113,14 @@ public sealed class LinqExpressionCompiler
         return Linq.Expression.Not(CompileInExpression(left, right));
     }
 
-    private static readonly MethodInfo ContainsMethod = typeof(string).GetMethod("Contains", new[] {typeof(string)})!;
+    private static readonly MethodInfo ContainsMethod =
+        typeof(string).GetMethod("Contains", new[] {typeof(string), typeof(StringComparison)})!;
 
     private static readonly MethodInfo StartsWithMethod =
-        typeof(string).GetMethod("StartsWith", new[] {typeof(string)})!;
+        typeof(string).GetMethod("StartsWith", new[] {typeof(string), typeof(StringComparison)})!;
 
-    private static readonly MethodInfo EndsWithMethod = typeof(string).GetMethod("EndsWith", new[] {typeof(string)})!;
+    private static readonly MethodInfo EndsWithMethod =
+        typeof(string).GetMethod("EndsWith", new[] {typeof(string), typeof(StringComparison)})!;
 
     private Linq.Expression CompileLikeExpression(Expression left, Expression right)
     {
@@ -147,7 +153,8 @@ public sealed class LinqExpressionCompiler
                     return Linq.Expression.Call(
                         CompilePropertyExpression(propertyExpression, prop),
                         ContainsMethod,
-                        Linq.Expression.Constant(value.Substring(1, value.Length - 2)));
+                        Linq.Expression.Constant(value.Substring(1, value.Length - 2)),
+                        Linq.Expression.Constant(StringComparison.CurrentCultureIgnoreCase));
                 }
 
                 if (start)
@@ -155,7 +162,8 @@ public sealed class LinqExpressionCompiler
                     return Linq.Expression.Call(
                         CompilePropertyExpression(propertyExpression, prop),
                         EndsWithMethod,
-                        Linq.Expression.Constant(value.Substring(1, value.Length - 1)));
+                        Linq.Expression.Constant(value.Substring(1, value.Length - 1)),
+                        Linq.Expression.Constant(StringComparison.CurrentCultureIgnoreCase));
                 }
 
                 if (end)
@@ -163,7 +171,8 @@ public sealed class LinqExpressionCompiler
                     return Linq.Expression.Call(
                         CompilePropertyExpression(propertyExpression, prop),
                         StartsWithMethod,
-                        Linq.Expression.Constant(value.Substring(0, value.Length - 1)));
+                        Linq.Expression.Constant(value.Substring(0, value.Length - 1)),
+                        Linq.Expression.Constant(StringComparison.CurrentCultureIgnoreCase));
                 }
 
                 return Linq.Expression.Equal(CompilePropertyExpression(propertyExpression, prop),
@@ -307,7 +316,8 @@ public sealed class LinqExpressionCompiler
 
         if (propertyType == typeof(DateTimeOffset) || propertyType == typeof(DateTimeOffset?))
         {
-            return DateTimeOffset.Parse(value.Value.ToString()!);
+            var offset = DateTimeOffset.Parse(value.Value.ToString()!);
+            return offset.ToUniversalTime();
         }
 
         if (propertyType == typeof(DateOnly) || propertyType == typeof(DateOnly?))
