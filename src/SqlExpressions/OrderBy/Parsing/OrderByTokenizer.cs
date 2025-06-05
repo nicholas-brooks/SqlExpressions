@@ -21,7 +21,19 @@ public class OrderByTokenizer : Tokenizer<OrderByToken>
 
             do
             {
-                if (char.IsLetter(next.Value) || next.Value == '_')
+                if (next.Value == '"')
+                {
+                    var str = OrderByTextParsers.QuotedString(next.Location);
+                    if (!str.HasValue)
+                    {
+                        yield return Result.CastEmpty<string, OrderByToken>(str);
+                    }
+
+                    next = str.Remainder.ConsumeChar();
+
+                    yield return Result.Value(OrderByToken.Identifier, str.Location, str.Remainder);
+                }
+                else if (char.IsLetter(next.Value) || next.Value == '_')
                 {
                     var beginIdentifier = next.Location;
                     do

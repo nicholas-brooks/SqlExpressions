@@ -11,6 +11,7 @@ namespace SqlExpressions.Tests.OrderBy
         public decimal Charge { get; set; }
         public DateTime OrderDate { get; set; }
         public string Status { get; set; } = string.Empty;
+        public string Desc { get; set; } = string.Empty;
     }
 
     public class SqlCompilingTests
@@ -26,6 +27,7 @@ namespace SqlExpressions.Tests.OrderBy
         [InlineData("OrderNo", "\"Orders\".\"OrderNo\"")]
         [InlineData("OrderNo asc", "\"Orders\".\"OrderNo\"")]
         [InlineData("OrderNo desc", "\"Orders\".\"OrderNo\" desc")]
+        [InlineData("\"desc\" desc", "\"Orders\".\"desc\" desc")]
         [InlineData("OrderNo asc, OrderDate desc", "\"Orders\".\"OrderNo\", \"Orders\".\"OrderDate\" desc")]
         public void FinalTests(string test, string expected)
         {
