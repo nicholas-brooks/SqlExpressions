@@ -15,14 +15,14 @@ public static class OrderByTokenParser
 
     private static readonly TokenListParser<OrderByToken, Expression> Identifier =
         Token.EqualTo(OrderByToken.Identifier)
-            .Select(t => (Expression)new PropertyExpression(t.ToStringValue()))
+            .Select(Expression (t) => new PropertyExpression(t.ToStringValue().Trim('"')))
             .Named("property");
 
     private static readonly TokenListParser<OrderByToken, Expression> Call =
         Identifier.Then(modifier =>
             Token.EqualTo(OrderByToken.Ascending).Value(OrderByType.Ascending)
                 .Or(Token.EqualTo(OrderByToken.Descending).Value(OrderByType.Descending))
-                .Select(op => (Expression)new ClauseExpression(op, modifier))
+                .Select(Expression (op) => new ClauseExpression(op, modifier))
                 .OptionalOrDefault(new ClauseExpression(OrderByType.Ascending, modifier)));
 
 

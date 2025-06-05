@@ -5,7 +5,7 @@ namespace SqlExpressions.OrderBy.Parsing;
 
 class OrderByParser
 {
-    readonly OrderByTokenizer tokenizer = new();
+    private readonly OrderByTokenizer tokenizer = new();
 
     public Expression Parse(string expression)
     {

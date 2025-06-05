@@ -59,20 +59,20 @@ static class ExpressionTokenParsers
 
     static readonly TokenListParser<ExpressionToken, Expression> RootProperty =
         Token.EqualTo(ExpressionToken.Identifier)
-            .Select(t => (Expression)new PropertyExpression(t.ToStringValue()))
+            .Select(Expression (t) => new PropertyExpression(t.ToStringValue()))
             .Named("property");
 
     static readonly TokenListParser<ExpressionToken, Expression> String =
         Token.EqualTo(ExpressionToken.String)
             .Apply(ExpressionTextParsers.String)
-            .Select(s => (Expression)new ConstantExpression(new ConstantValue(ConstantValueType.String, s)));
+            .Select(Expression (s) => new ConstantExpression(new ConstantValue(ConstantValueType.String, s)));
 
     static readonly TokenListParser<ExpressionToken, Expression> Number =
         Token.EqualTo(ExpressionToken.Number)
             .Apply(ExpressionTextParsers.Real)
             .SelectCatch(n => decimal.Parse(n.ToStringValue(), CultureInfo.InvariantCulture),
                 "the numeric literal is too large")
-            .Select(d => (Expression)new ConstantExpression(new ConstantValue(ConstantValueType.Number, d)));
+            .Select(Expression (d) => new ConstantExpression(new ConstantValue(ConstantValueType.Number, d)));
 
     static readonly TokenListParser<ExpressionToken, Expression> Literal =
         String
@@ -114,7 +114,7 @@ static class ExpressionTokenParsers
                 Token.EqualTo(ExpressionToken.Null).Value(OperatorType.IsNull)
                     .Or(Token.EqualTo(ExpressionToken.Not).IgnoreThen(Token.EqualTo(ExpressionToken.Null))
                         .Value(OperatorType.IsNotNull)))
-            .Select(op => (Expression)new CallExpression(op, operand))
+            .Select(Expression (op) => new CallExpression(op, operand))
             .OptionalOrDefault(operand))
         .Named("expression");
 
